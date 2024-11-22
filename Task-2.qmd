@@ -1,0 +1,317 @@
+---
+title: "Crime Trends in New Zealand: An Analysis of Demographics and Offense Types"
+author: "Anju Sambasivan"
+format: pdf
+editor: visual
+---
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Set global chunk options to ensure figures display
+knitr::opts_chunk$set(out.extra = '', fig.pos = 'H')
+```
+
+### Introduction
+
+New Zealand is often ranked as one of the peaceful countries in the world, but challeges related to crimes persist, especially when looking into disparities over different demographic groups. Youth involvement in crimes are a concerning issue, early age criminal behavior might tend to repeated offences and lead to constant interaction with the justice system. Understanding the types of crimes and demographics of offenders are the key thing to develop an effective crime prevention strategies and interventions. This report mainly focus on analysing the different crime types responsible by different demographic groups, particularly considering age, gender, ethnicity in New Zealand.
+
+The research problem is: In New Zealand which demographic groups categorized under age, sex and ethnicity are the most involved in criminal proceedings within criminal justice system and what types of crimes are they involved in.
+
+### Methods
+
+The dataset used for this report was collected from the New Zealand police website, particularly from RCOS(Recorded Crime Offenders Statistics) records over the span of July2022 to July 2024. This dataset includes criminal proceedings details based on ANZSOC division, demographic factors such as Ethnicity, Gender, Age Group.
+
+The variables used for this analysis are:
+
+-   Date: Month and year of action. The police take legal action against the offender.
+-   ANZSOC Division: The Australian and New Zealand Standard Offence Classification, which is the type of offences committed by offenders.
+-   Ethnicity: Ethnic group of offenders, which is self-identified by offenders.
+-   Gender: The biological sex of the offenders.
+-   Age Group: The offender's age group at the date of their first proceeding.
+-   Proceedings: Total count of charges against an individual at the time of their offence.
+
+Exploratory data analysis was conducted for identifying the trends and patterns in criminal proceedings based on above mentioned demographic variables. The ggplot2 package in R was used for making various visualizations, such as bar plots , box plots, for effectively demonstrating the relationship between crime proceedings and demographic groups.The knitr package was used for creating tables, also the dplyr package employed for grouping and summarizing categories. To ensure treating categorical variables properly during analysis and visualization converted ANZSOC Division, Ethnicity, Age Group, and Gender into factor variables.
+
+### Results
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# For data visualization
+library(ggplot2)
+
+# For report generation and create table
+library(knitr)
+
+# For data manipulation such as summarizing, filtering
+library(dplyr)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+data <- read.csv("data.csv")
+```
+
+```{r, include = FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+head(data)
+```
+
+```{r,  include = FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+str(data)
+```
+
+```{r, include = FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+data$ANZSOC_Division<- as.factor(data$ANZSOC_Division)
+data$Ethnicity <- as.factor(data$Ethnicity)
+data$Age_Group <- as.factor(data$Age_Group)
+data$Gender <- as.factor(data$Gender)
+
+```
+
+```{r,  include = FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+str(data)
+```
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE, fig.cap=" Total Proceedings by ANZSOC Division",fig.width=7, fig.height=4}
+# Summarize the number of Proceedings for each ANZSOC_Division category
+anzsoc_division_summary <- data %>%
+  group_by(ANZSOC_Division) %>%
+  summarise(Number_of_Proceedings = sum(Proceedings)) %>%
+  arrange(desc(Number_of_Proceedings))  # Sort by the total number of Proceedings
+
+# Create the bar chart
+ggplot(anzsoc_division_summary, aes(x = reorder(ANZSOC_Division, Number_of_Proceedings), y = Number_of_Proceedings)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  coord_flip() +  # Flip the coordinates for horizontal bars
+  theme_minimal() +
+  labs(title = "Total Proceedings by ANZSOC Division", x = "ANZSOC Division", y = "Total Proceedings") +
+  theme(axis.text.y = element_text(size = 9),  # Adjust the size of the y-axis text
+        axis.text.x = element_text(size = 9),  # Adjust the size of the x-axis text
+        plot.title = element_text(size = 12, face = "bold", hjust = 1),
+        axis.title.x = element_text(size = 9),  # Adjust the size of the x-axis title
+        axis.title.y = element_text(size = 9))  # Adjust the title size and make it bold
+
+
+```
+
+The Figure 1 barchart gives an overview of the distribution of total proceedings for different ANZSOC divisions. Traffic and Vehicle Regulatory Offences are the most common offence type. This indicates the pervasive nature of trivial traffic violations. The next highest offence category is Acts Intended to Cause Injury, this emphasizes the violent crime that is common among crimes. Another prominent category is Theft and Related Offences which shows a high rate of property related crimes such as theft and burglary in New Zealand. Whereas the series of offences like Sexual Assaults, Robbery, Homicides are very low in number, these all have severe legal consequences. From this chart we can conclude that a considerable amount of judicial resources are allocated for dealing minor offences such as traffic violations.
+
+```{r, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Number of Proceedings by Gender", fig.width=7, fig.height=4}
+# Summarize the number of crimes by Gender
+gender_crime_summary <- aggregate(Proceedings ~ Gender, data = data, sum)
+
+# Create the bar graph
+ggplot(gender_crime_summary, aes(x = Gender, y = Proceedings, fill = Gender)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  labs(title = "Number of Proceedings by Gender", x = "Gender", y = "Proceedings") +
+   theme(axis.title.x = element_text(size = 10),  # Adjust the size of the x-axis title
+        axis.title.y = element_text(size = 10))  # Adjust the size of the y-axis title
+
+```
+
+The Figure 2 bar chart illustrates a clear gender discrepancy in terms of number of criminal proceedings. A large number of cases are accounted by males. The number of proceedings involved by males are 186485 cases whereas female cases are only 55396. This huge difference shows us men are more associated with a large proportion of criminal activities or legal actions compared to women. If the offender may be an organization then that cases included in the category named 'Not Applicable' also if the gender is unknown then it is in the category 'Not Stated', these two are negligible in number. Almost 75% of the criminal cases are related to male, while females contribute only around 22%.
+
+```{r, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Gender of Offenders and their Ethnicity", fig.width=7, fig.height=4}
+# Create a stacked bar chart for Gender and Ethnic Group with Proceedings Count
+ggplot(data, aes(x = Gender, y = Proceedings, fill = Ethnicity)) +
+  geom_bar(stat = "identity") +  # Use stat = "identity" for actual values from Proceedings
+  labs(title = "Gender of Offenders and their Ethnicity (Proceedings Count)", 
+       x = "Gender", 
+       y = "Proceedings", 
+       fill = "Ethnic Group") +
+  theme_minimal()
+
+```
+
+From Figure 3 stacked bar chart the ethnic group Maori over-represented from both male and female gender, especially the male category comprise a notable proportion of the total number of proceedings. The large number of criminal activities are connected with Maori males. The second highest ethnic group is European, followed by Pacific Island. The total number of proceedings among females for all ethnic categories are significantly lower than all males. Other ethnicities like Asian, African and Indian, are low represented in both male and female categories. This might be because of the lower population of that group in New Zealand.
+
+```{r, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap= "Age Group of Offenders and their Ethnicity (Proceedings Count)", fig.width=7, fig.height=5}
+
+library(RColorBrewer)
+
+
+ggplot(data, aes(x = Age_Group, y = Proceedings, fill = Ethnicity)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Age Group of Offenders and their Ethnicity", 
+       x = "Age Group", 
+       y = "Proceedings", 
+       fill = "Ethnic Group") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),  # Rotate x-axis labels for readability
+        axis.title.x = element_text(size = 10),  # Adjust the size of the x-axis title
+        axis.title.y = element_text(size = 10),  # Adjust the size of the y-axis title
+        plot.title = element_text(size = 12, face = "bold")) +  # Adjust title size and bold style
+  scale_fill_brewer(palette = "Paired")  
+
+
+```
+
+The Figure 4 stacked bar chart gives an insight of how the distribution of criminal proceedings among various age groups, based on their ethnicity. The age group ranging from 0-4 to 80+. The majority of proceedings occurred at age limits from 15-39 with proceedings of the highest range being 30-34 (38172). This means that the people in their late teenage to their mid thirties are more involved in criminal activities compared with other age groups. The ethnic group Maori is over represented across all groups of ages. This suggests that Maori people at their younger age are frequently involved in criminal activities. The second position is Europeans, who also show a high number of crime activities especially the peak one is at the age group 25-39. This group also covered a significant portion of total proceedings among different age groups. The ethnic group Pacific Island offenders are also present but relatively smaller in number compared to Maori and Europeans. The case is the same for Asian, Indian and African, all show a small number of representations. After the age of 34, there is a substantial decrease in the number of proceedings, which indicates that as people grow older, involvement in criminal activities diminishes.
+
+
+
+```{r, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Proceedings by Ethnicity",  fig.width=6, fig.height=6.5}
+
+# Create a box plot for Proceedings by Ethnicity
+ggplot(data, aes(x = Ethnicity, y = Proceedings, fill = Ethnicity)) +
+  geom_boxplot() +
+  labs(title = "Number of Proceedings by Ethnicity", 
+       x = "Ethnicity", 
+       y = "Proceedings") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+         axis.title.x = element_text(size = 9),  # Adjust the size of the x-axis title
+         axis.title.y = element_text(size = 9),  # Adjust the size of the y-axis title
+         plot.title = element_text(size = 10, face = "bold"))  # Adjust title size and bold style)  # Rotate x-axis labels for readability
+
+```
+
+The boxplot Figure 5 shows that the ethnic groups such as Europeans and Maori have the highest number of proceedings, even some individuals associated with more than 60 proceedings. Europeans and Maori groups shows more spread of data, have large interquartile ranges and longer whiskers compared to other ethnic groups, which means most individuals have relatively lower proceedings but there are some outliers. African, Asian, Indian, and Middle Eastern ethnicities have relatively smaller ranges and fewer outliers. The median is significantly very low across all ethnicities, with many groups having value 1-2 proceedings, which suggests the number of proceedings involved by each individual is very low in number.
+
+#### Summary Statistics for Proceedings
+
+```{r, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE}
+# Descriptive statistics for the number of proceedings
+summary_stats <- summary(data$Proceedings)
+
+# Additional statistics like standard deviation and variance
+std_dev <- sd(data$Proceedings)  # Standard deviation
+variance <- var(data$Proceedings)  # Variance
+
+# Create a data frame for all the summary statistics
+summary_table <- data.frame(
+  Statistic = c("Min", "1st Qu.", "Median", "Mean", "3rd Qu.", "Max", "Standard Deviation", "Variance"),
+  Value = c(summary_stats["Min."], summary_stats["1st Qu."], summary_stats["Median"], 
+            summary_stats["Mean"], summary_stats["3rd Qu."], summary_stats["Max."], 
+            std_dev, variance)
+)
+
+# Use kable to display the table
+knitr::kable(summary_table, col.names = c("Statistic", "Value"), caption = "Descriptive Statistics for Criminal Proceedings")
+```
+
+Table 1 is the result of descriptive statistics for the number of proceedings. The smallest number of proceedings is 1 and maximum value is 82, which indicates some persons are involved a higher number of proceedings. The median value of proceedings is 1, which means half of the individuals are only involved in 1 proceeding. The presence of outliers like 82 affect the average value of proceedings which slightly increases to 3.157. The standard deviation indicates some variability in the number of proceedings which is 5.515, and the variance is 30.42 which shows moderate amount of variation.
+
+```{r, include=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+
+# Grouping the data by Ethnicity and ANZSOC_Division and counting the occurrences
+
+crime_by_ethnicity <- data %>%
+  group_by(Ethnicity, ANZSOC_Division) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+```
+
+```{r,  include=FALSE, echo=TRUE, message=FALSE, warning=FALSE}
+
+# Finding the most common crime for each ethnic group and showing their count
+most_common_crime_by_ethnicity <- crime_by_ethnicity %>%
+  group_by(Ethnicity) %>%
+  slice_max(Count, n = 1) %>%
+  arrange(desc(Count)) %>%
+  select(Ethnicity, ANZSOC_Division, Count) 
+
+# View the result
+kable(most_common_crime_by_ethnicity, caption = "Most Common Crimes by Ethnic Group")
+
+
+```
+
+```{r, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Most Common Crimes by Ethnic Group",  fig.width=6, fig.height=5}
+
+# Create a bar plot to visualize the most common crimes for each ethnic group
+ggplot(most_common_crime_by_ethnicity, aes(x = Ethnicity, y = Count, fill = ANZSOC_Division)) +
+  geom_bar(stat = "identity") +  # Use 'identity' to map the values directly
+  coord_flip() +  # Flip the axes for horizontal bars
+  labs(title = "Most Common Crimes by Ethnic Group",
+       x = "Ethnic Group",
+       y = "Number of Proceedings",
+       fill = "ANZSOC Division") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(hjust = 1))  # Rotate x-axis labels for readability
+```
+
+From Figure 6 bar graph shows that the ethnic group Maori and European have the highest number of crimes, for theft and related offenses, while Pacific Island, Asian, and Indian ethnic groups for traffic and vehicle regulatory offenses.
+
+### Discussion
+
+The analysis of crime patterns among different demographic groups in New Zealand disclose remarkable differences in criminal proceedings in terms of gender, ethnicity and age. These differences underline important insights for government and law enforcement agencies, these all point out the needs of specialized intervention programs for reducing the crimes and try to deal with the underlying causes of these issues.
+
+The data showed a substantial difference in the number of males and females in criminal proceedings. There is a gender gap among people who committed crimes, the vast majority of crime cases are from men around 75%. This high rate of criminal activities by men suggest a need for gender specific crime prevention programs that could be conducted by authorities. These programs could focus on reducing violent behavior and risky driving habits among males.
+
+The data also showed us a clear difference in crime rates among different ethnic groups. Maori ethnicity is over represented in both male and female categories. Followed by Europeans, Pacific Island ethnicity also have an over-represented pattern in crimes. In contrast, Asian, Indian, and African ethnic groups are relatively lower involved in crimes. This may indicate a need for culturally tailored intervention programs that address the particular ethnic groups problems, challenges they faced and provide access to resources, education and support systems which could reduce the crime rates.
+
+Age is also a factor of criminal behavior among population. The data shows that the younger individuals specifically between 15-39 years old are most involved in criminal activities. The peak proportion of crime rates seen in the age group 30-34 with offences such as traffic violations, property crimes, theft are more from this age group. This pattern suggests that crime prevention programs should aim at younger populations. These early intervention procedures could reduce the chance of re- offending. Addressing the economic and social issues that lead to youth crime could be helpful for reducing overall crime rates.
+
+The most common crime type reported is Traffic and Vehicle Regulatory Offenses, which is followed by Acts Intended to Cause Injury and Theft and Related Offenses. This evidence suggests that a considerable amount of the judicial system's resources is needed for dealing non-violent crimes like traffic violations, and also need a strong concern on a higher number of acts intended to cause injury and theft crimes. These challenges should be addressed by implementing stricter enforcement strategies and providing education and support programs.
+
+This report underlines the importance of considering the demographic factors such as gender, ethnicity, and age while implementing crime prevention strategies. The answer of research problem is Men specifically, Maori ethnic groups are over represented in criminal activities, while the younger aged people are more involved in offences. The most common crime type is theft and related offences and traffic violations. These findings provide evidence for the needs of intervention programs and initiatives that could address socio- economic issues, provide better education and support for populations that could reduce crime rates and make a more safer society.
+
+\newpage
+
+### Appendix
+
+```{r, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE}
+
+# Summarize total proceedings by ANZSOC_Division and arrange in descending order
+anzsoc_division_counts <- data %>%
+  group_by(ANZSOC_Division) %>%
+  summarise(Total_Proceedings = sum(Proceedings, na.rm = TRUE)) %>%
+  arrange(desc(Total_Proceedings))
+
+# View the summarized data in descending order
+kable(anzsoc_division_counts, caption = "Total Proceedings by ANZSOC Division")
+
+```
+
+```{r, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE}
+# Summarize the number of crimes by Gender (Sex)
+gender_crime_summary <- aggregate(Proceedings ~ Gender, data = data, sum)
+
+# Sort the table in descending order by Total Proceedings
+gender_crime_summary <- gender_crime_summary[order(-gender_crime_summary$Proceedings), ]
+
+# Display the summarized table using kable
+kable(gender_crime_summary, col.names = c("Gender", "Total Proceedings"), caption = "Total Criminal Proceedings by Gender")
+```
+
+```{r, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE}
+# Summarize the total proceedings by Age Group
+age_group_summary <- data %>%
+  group_by(Age_Group) %>%
+  summarise(Total_Proceedings = sum(Proceedings, na.rm = TRUE)) %>%
+  arrange(desc(Total_Proceedings))
+
+# Display the summarized table using kable
+kable(age_group_summary, col.names = c("Age Group", "Total Proceedings"), caption = "Total Criminal Proceedings by Age Group")
+```
+
+
+
+```{r, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE}
+# Create ethnic group counts
+ethnic_group_counts <- data %>%
+  group_by(Ethnicity) %>%
+  summarise(Count = n())
+
+# Calculate the proportions for each Ethnic Group and arrange in descending order
+ethnic_group_proportions <- ethnic_group_counts %>%
+  mutate(Proportion = Count / sum(Count)) %>%
+  arrange(desc(Proportion))
+
+# View the sorted proportions
+kable(ethnic_group_proportions, caption = "Proportions of Criminal Proceedings by Ethnic Group")
+
+```
+
+\newpage
+```{r, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE}
+# Finding the most common crime for each ethnic group and showing their count
+most_common_crime_by_ethnicity <- crime_by_ethnicity %>%
+  group_by(Ethnicity) %>%
+  slice_max(Count, n = 1) %>%
+  arrange(desc(Count)) %>%
+  select(Ethnicity, ANZSOC_Division, Count) 
+
+# View the result
+kable(most_common_crime_by_ethnicity, caption = "Most Common Crimes by Ethnic Group")
+
+```
